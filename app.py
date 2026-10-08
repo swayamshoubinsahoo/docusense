@@ -18,17 +18,8 @@ if file and st.button('Analyze'):
             img = Image.open(file)
             prompt = 'You are a compassionate medical explainer. Analyze this document/report image carefully. 1. Extract key readings/biomarkers with normal ranges. 2. Explain all findings in plain, simple everyday language. 3. List 3-4 specific questions the patient should ask their doctor. Include a clear medical disclaimer.'
             
-            success = False
-            last_err = ''
-            for model_name in ['gemini-2.5-flash', 'gemini-2.0-flash']:
-                try:
-                    res = client.models.generate_content(model=model_name, contents=[img, prompt])
-                    st.markdown(res.text)
-                    success = True
-                    break
-                except Exception as e:
-                    last_err = str(e)
-                    continue
-            
-            if not success:
-                st.error(f'Service temporarily busy, please click Analyze again. Details: {last_err}')
+            try:
+                res = client.models.generate_content(model='gemini-3.8-flash', contents=[img, prompt])
+                st.markdown(res.text)
+            except Exception as e:
+                st.error(f'Service temporarily busy, please click Analyze again. Details: {e}')
