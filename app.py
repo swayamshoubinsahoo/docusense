@@ -3,8 +3,8 @@ import time
 from PIL import Image
 from google import genai
 
-st.set_page_config(page_title='DocuSense AI', page_icon='medical')
-st.title('DocuSense AI')
+st.set_page_config(page_title='DocuSense', page_icon='medical')
+st.title('DocuSense')
 st.caption('Multimodal Medical Document Explainer')
 
 api_key = st.sidebar.text_input('Gemini API Key', type='password')
