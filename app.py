@@ -14,17 +14,21 @@ if file and st.button('Analyze'):
         st.warning('Please enter your Gemini API Key in the sidebar.')
     else:
         with st.spinner('Analyzing medical document...'):
-            client = genai.Client(api_key=api_key)
+            client = genai.Client(api_key=api_key.strip())
             img = Image.open(file)
             prompt = 'You are a compassionate medical explainer. Analyze this document/report image carefully. 1. Extract key readings/biomarkers with normal ranges. 2. Explain all findings in plain, simple everyday language. 3. List 3-4 specific questions the patient should ask their doctor. Include a clear medical disclaimer.'
+            
             success = False
-            for model_name in ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-3.8-flash']:
+            last_err = ''
+            for model_name in ['gemini-2.5-flash', 'gemini-2.0-flash']:
                 try:
                     res = client.models.generate_content(model=model_name, contents=[img, prompt])
                     st.markdown(res.text)
                     success = True
                     break
-                except Exception:
+                except Exception as e:
+                    last_err = str(e)
                     continue
+            
             if not success:
-                st.error('Servers are temporarily under high load. Please try clicking Analyze again in a few seconds.')
+                st.error(f'Service temporarily busy, please click Analyze again. Details: {last_err}')
