@@ -1,9 +1,9 @@
-import streamlit as st
+﻿import streamlit as st
 from PIL import Image
 from google import genai
 
-st.set_page_config(page_title='DocuSense AI', page_icon='??')
-st.title('?? DocuSense AI')
+st.set_page_config(page_title='DocuSense AI', page_icon='medical')
+st.title('DocuSense AI')
 st.caption('Multimodal Medical Document Explainer')
 
 api_key = st.sidebar.text_input('Gemini API Key', type='password')
@@ -14,11 +14,17 @@ if file and st.button('Analyze'):
         st.warning('Please enter your Gemini API Key in the sidebar.')
     else:
         with st.spinner('Analyzing medical document...'):
-            try:
-                client = genai.Client(api_key=api_key)
-                img = Image.open(file)
-                prompt = 'You are a compassionate medical explainer. Analyze this document/report image carefully. 1. Extract key readings/biomarkers with normal ranges. 2. Explain all findings in plain, simple everyday language. 3. List 3-4 specific questions the patient should ask their doctor. Include a clear medical disclaimer.'
-                res = client.models.generate_content(model='gemini-3.8-flash', contents=[img, prompt])
-                st.markdown(res.text)
-            except Exception as e:
-                st.error(f'Error: {e}')
+            client = genai.Client(api_key=api_key)
+            img = Image.open(file)
+            prompt = 'You are a compassionate medical explainer. Analyze this document/report image carefully. 1. Extract key readings/biomarkers with normal ranges. 2. Explain all findings in plain, simple everyday language. 3. List 3-4 specific questions the patient should ask their doctor. Include a clear medical disclaimer.'
+            success = False
+            for model_name in ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-3.8-flash']:
+                try:
+                    res = client.models.generate_content(model=model_name, contents=[img, prompt])
+                    st.markdown(res.text)
+                    success = True
+                    break
+                except Exception:
+                    continue
+            if not success:
+                st.error('Servers are temporarily under high load. Please try clicking Analyze again in a few seconds.')
