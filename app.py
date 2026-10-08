@@ -3,13 +3,18 @@ import time
 from PIL import Image
 from google import genai
 
+# Page configuration
 st.set_page_config(page_title='DocuSense', page_icon='medical')
 st.title('DocuSense')
 st.caption('Multimodal Medical Document Explainer')
 
+# Sidebar for API key input
 api_key = st.sidebar.text_input('Gemini API Key', type='password')
-file = st.file_uploader('Upload report/prescription', type=['jpg','png','jpeg'])
 
+# File upload component
+file = st.file_uploader('Upload report/prescription', type=['jpg', 'png', 'jpeg'])
+
+# Action button and generation workflow
 if file and st.button('Analyze'):
     if not api_key:
         st.warning('Please enter your Gemini API Key in the sidebar.')
@@ -17,28 +22,37 @@ if file and st.button('Analyze'):
         with st.spinner('Analyzing medical document...'):
             client = genai.Client(api_key=api_key.strip())
             img = Image.open(file)
-            prompt = 'You are a compassionate medical explainer. Analyze this document/report image carefully. 1. Extract key readings/biomarkers with normal ranges. 2. Explain all findings in plain, simple everyday language. 3. List 3-4 specific questions the patient should ask their doctor. Include a clear medical disclaimer.'
-            
+            prompt = (
+                'You are a compassionate medical explainer. '
+                'Analyze this document/report image carefully. '
+                '1. Extract key readings/biomarkers. '
+                '2. Explain the results in simple, reassuring language.'
+            )
+
+            # Fallback list of models to handle high load or 503 errors
+            models_to_try = [
+                'gemini-2.5-flash',
+                'gemini-2.0-flash',
+                'gemini-1.5-flash'
+            ]
+
             success = False
             last_err = ''
-            
-            # Retry up to 3 times specifically for momentary high-load spikes
-            for attempt in range(1, 4):
+
+            for model_name in models_to_try:
                 try:
                     res = client.models.generate_content(
-                        model='gemini-3.8-flash',
+                        model=model_name,
                         contents=[img, prompt]
                     )
-                    st.markdown(res.text)
-                    success = True
-                    break
+                    if res and res.text:
+                        st.markdown(res.text)
+                        success = True
+                        break  # Stop trying if the model responds successfully
                 except Exception as e:
                     last_err = str(e)
-                    if '503' in last_err or 'UNAVAILABLE' in last_err:
-                        time.sleep(3)
-                        continue
-                    else:
-                        break
-            
+                    time.sleep(1)  # Brief pause before falling back to the next model
+                    continue
+
             if not success:
-                st.error(f'Service busy. Please click Analyze again in a few seconds. (Details: {last_err})')
+                st.error(f"Service busy across all available models. Please try again shortly. Details: {last_err}")
