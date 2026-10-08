@@ -19,22 +19,26 @@ if file and st.button('Analyze'):
             img = Image.open(file)
             prompt = 'You are a compassionate medical explainer. Analyze this document/report image carefully. 1. Extract key readings/biomarkers with normal ranges. 2. Explain all findings in plain, simple everyday language. 3. List 3-4 specific questions the patient should ask their doctor. Include a clear medical disclaimer.'
             
-            models = ['gemini-3.8-flash', 'gemini-2.5-flash']
             success = False
             last_err = ''
-
-            for model_name in models:
-                for attempt in range(2):
-                    try:
-                        res = client.models.generate_content(model=model_name, contents=[img, prompt])
-                        st.markdown(res.text)
-                        success = True
-                        break
-                    except Exception as e:
-                        last_err = str(e)
-                        time.sleep(2)
-                if success:
+            
+            # Retry up to 3 times specifically for momentary high-load spikes
+            for attempt in range(1, 4):
+                try:
+                    res = client.models.generate_content(
+                        model='gemini-3.8-flash',
+                        contents=[img, prompt]
+                    )
+                    st.markdown(res.text)
+                    success = True
                     break
-
+                except Exception as e:
+                    last_err = str(e)
+                    if '503' in last_err or 'UNAVAILABLE' in last_err:
+                        time.sleep(3)
+                        continue
+                    else:
+                        break
+            
             if not success:
-                st.error(f'Google servers are experiencing high load right now. Please wait a moment and click Analyze again. (Details: {last_err})')
+                st.error(f'Service busy. Please click Analyze again in a few seconds. (Details: {last_err})')
