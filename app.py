@@ -29,11 +29,11 @@ if file and st.button('Analyze'):
                 '2. Explain the results in simple, reassuring language.'
             )
 
-            # Fallback list of models to handle high load or 503 errors
+            # Active fallback models for google-genai SDK
             models_to_try = [
                 'gemini-2.5-flash',
                 'gemini-2.0-flash',
-                'gemini-1.5-flash'
+                'gemini-2.0-flash-lite'
             ]
 
             success = False
@@ -48,11 +48,11 @@ if file and st.button('Analyze'):
                     if res and res.text:
                         st.markdown(res.text)
                         success = True
-                        break  # Stop trying if the model responds successfully
+                        break
                 except Exception as e:
                     last_err = str(e)
-                    time.sleep(1)  # Brief pause before falling back to the next model
+                    time.sleep(1)
                     continue
 
             if not success:
-                st.error(f"Service busy across all available models. Please try again shortly. Details: {last_err}")
+                st.error(f"Service busy or model unavailable. Details: {last_err}")
